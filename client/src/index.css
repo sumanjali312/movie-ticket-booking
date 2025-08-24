@@ -1,0 +1,59 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import "tailwindcss";
+
+/* Root Variables */
+:root {
+  --color-primary: #F84565;
+  --color-primary-dull: #D63854;
+}
+
+/* Global Styles */
+* {
+  font-family: "Outfit", sans-serif;
+  scrollbar-width: thin;
+  scrollbar-color: #787777 #1e1e1e; /* Firefox */
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: #09090B;
+  color: white;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar Utilities */
+/* Firefox handled above */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Custom Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #787777;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #1e1e1e;
+}
+
+/* Input tweaks */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none; /* Remove number input arrows */
+  margin: 0;
+}
+
+::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Invert calendar icon for dark mode */
+}
