@@ -1,10 +1,14 @@
 import { Inngest } from "inngest";
-import User from "../models/User.js"; // adjust path to your User model
+import connectDB from "../configs/db.js";
+import User from "../models/User.js";
+
+// Ensure DB is connected for every Inngest function invocation
+await connectDB();
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "movie-ticket-booking" });
 
-// Function to create user
+// Function to create user when Clerk fires "user.created"
 const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
@@ -23,7 +27,7 @@ const syncUserCreation = inngest.createFunction(
   }
 );
 
-// Function to delete user
+// Function to delete user when Clerk fires "user.deleted"
 const syncUserDeletion = inngest.createFunction(
   { id: "delete-user-from-clerk" },
   { event: "clerk/user.deleted" },
@@ -34,7 +38,7 @@ const syncUserDeletion = inngest.createFunction(
   }
 );
 
-// Function to update user
+// Function to update user when Clerk fires "user.updated"
 const syncUserUpdation = inngest.createFunction(
   { id: "update-user-from-clerk" },
   { event: "clerk/user.updated" },
@@ -52,7 +56,7 @@ const syncUserUpdation = inngest.createFunction(
   }
 );
 
-// Export functions
+// Export all Inngest functions for /api/inngest
 export const functions = [
   syncUserCreation,
   syncUserDeletion,
