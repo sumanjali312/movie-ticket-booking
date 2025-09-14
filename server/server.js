@@ -1,23 +1,42 @@
 import express from "express";
+import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "./configs/db.js";
+import connectDB from "./config/db.js"; 
+import movieRoutes from "./routes/movieRoutes.js";
+import showRoutes from "./routes/showRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+
+// ✅ Import Clerk middleware
 import { clerkMiddleware } from "@clerk/express";
-import { serve } from "inngest/express";
-import { inngest, functions } from "./inngest/index.js";
+
+dotenv.config();
 
 const app = express();
 
-// Connect to database
-await connectDB();
-
 // Middlewares
-app.use(express.json());
 app.use(cors());
-app.use(clerkMiddleware);
+app.use(express.json());
+
+// ✅ Clerk middleware MUST be registered before any routes that use getAuth()
+app.use(clerkMiddleware());
+
+// Test route
+app.get("/", (req, res) => res.send("Server is Live"));
 
 // Routes
-app.get("/", (req, res) => res.send("Server is Live!"));
-app.use("/api/inngest", serve({ client: inngest, functions }));
+app.use("/api/movies", movieRoutes);
+app.use("/api/show", showRoutes);
+app.use("/api/booking", bookingRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes); 
 
-// Export app for Vercel (do not listen here)
-export default app;
+// Connect MongoDB
+connectDB();
+
+// Start server
+const PORT = process.env.PORT || 8082;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});

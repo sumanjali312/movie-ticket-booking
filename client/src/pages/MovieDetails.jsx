@@ -4,13 +4,15 @@ import { dummyDateTimeData, dummyShowsData } from '../assets/assets';
 import BlurCircle from '../components/BlurCircle';
 import { Heart, PlayCircleIcon, StarIcon } from 'lucide-react';
 import timeFormat from '../lib/timeFormat';
+import ReactPlayer from 'react-player';
 
 const MovieDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [show, setShow] = useState(null);
+  const [playTrailer, setPlayTrailer] = useState(false);
 
-  const getShow = async () => {
+  useEffect(() => {
     const showData = dummyShowsData.find(show => show._id === id);
     if (showData) {
       setShow({
@@ -20,29 +22,11 @@ const MovieDetails = () => {
     } else {
       setShow(null);
     }
-  };
 
-  useEffect(() => {
-    getShow();
-
-    // Cleanup any video when leaving page
     return () => {
-      const video = document.querySelector("video");
-      if (video) {
-        video.pause();
-        video.src = "";
-      }
+      setPlayTrailer(false); // stop trailer when leaving page
     };
   }, [id]);
-
-  const handlePlayTrailer = () => {
-    const video = document.querySelector("video");
-    if (video) {
-      video.play().catch(() => {
-        // Ignore play() error if user navigates away quickly
-      });
-    }
-  };
 
   if (!show) return <div className='text-center mt-10'>Loading...</div>;
 
@@ -59,9 +43,7 @@ const MovieDetails = () => {
         {/* Movie Details */}
         <div className='relative flex flex-col gap-3'>
           <BlurCircle top='-100px' left='-100px' />
-          
           <p className='text-yellow-400 font-semibold'>ALL TYPE OF MOVIES</p>
-
           <h1 className='text-4xl font-semibold max-w-96 text-balance'>
             {show.movie.title}
           </h1>
@@ -85,8 +67,8 @@ const MovieDetails = () => {
           {/* Action Buttons */}
           <div className='flex items-center flex-wrap gap-4 mt-4'>
             <button
-              onClick={handlePlayTrailer}
-              className="flex items-center gap-2 px-7 py-3 text-sm bg-yellow-500 hover:bg-yellow-500 text-white-100 rounded-md transition cursor-pointer"
+              onClick={() => setPlayTrailer(true)}
+              className="flex items-center gap-2 px-7 py-3 text-sm bg-yellow-500 text-white rounded-md transition cursor-pointer"
             >
               <PlayCircleIcon className="w-5 h-5 text-white" /> Watch Trailer
             </button>
@@ -105,22 +87,26 @@ const MovieDetails = () => {
         </div>
       </div>
 
-      <p className='mt-8 text-lg font-semibold'>Your Favorite Cast</p>
-
-      <div className='overflow-x-auto no-scrollbar mt-4 pb-4'>
-        <div className='flex items-center gap-4 w-max px-4'>
-          {show.movie.casts.slice(0, 12).map((cast, index) => (
-            <div key={index} className='flex flex-col items-center'>
-              <img 
-                src={cast.profile_path || 'https://via.placeholder.com/80'} 
-                alt={cast.name} 
-                className='rounded-full h-20 md:h-20 aspect-square object-cover' 
-              />
-              <p className='text-sm mt-1 text-center'>{cast.name}</p>
-            </div>
-          ))}
+      {/* Trailer Modal */}
+      {playTrailer && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="relative w-[90%] md:w-[70%]">
+            <ReactPlayer
+              url={show.movie.trailerUrl || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'}
+              controls
+              playing
+              width="100%"
+              height="500px"
+            />
+            <button
+              onClick={() => setPlayTrailer(false)}
+              className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded"
+            >
+              Close
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

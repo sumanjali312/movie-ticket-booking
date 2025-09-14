@@ -1,89 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import BlurCircle from '../components/BlurCircle';
-import Loading from '../components/Loading';
-import { dummyBookingData } from '../assets/assets';
-import { dateFormat } from '../lib/dateFormat';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useUser, useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 const MyBookings = () => {
-  const currency = import.meta.env.VITE_CURRENCY;
-
+  const { user } = useUser();
+  const { getToken } = useAuth();   // ✅ get Clerk token
   const [bookings, setBookings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Format runtime as "Xh Ym"
-  const formatRuntime = (minutes) => {
-    if (!minutes) return '';
-    const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hrs}h ${mins}m`;
-  };
-
-  const getMyBooking = async () => {
-    setBookings(dummyBookingData);
-    setIsLoading(false);
-  };
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getMyBooking();
-  }, []);
+    const fetchBookings = async () => {
+      if (!user) return;
 
-  return !isLoading ? (
-    <div className="relative px-6 md:px-16 lg:px-40 pt-30 md:pt-40 min-h-[80vh]">
-      <BlurCircle top="100px" left="100px" />
-      <BlurCircle bottom="0px" left="600px" />
+      try {
+        // get Clerk session token
+        const token = await getToken();
 
-      <h1 className="text-lg font-semibold mb-4">My Bookings</h1>
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/booking/user/${user.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }, // ✅ send token
+          }
+        );
 
-      <ul>
-        {bookings.map((item, index) => (
+        setBookings(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+        setBookings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [user, getToken]);
+
+  if (loading) return <p className="text-center mt-20">Loading bookings...</p>;
+  if (bookings.length === 0)
+    return <p className="text-center mt-20">No bookings available</p>;
+
+  return (
+    <div className="p-6 md:px-16 lg:px-40 xl:px-44 my-20">
+      <h1 className="text-2xl font-bold mb-6">My Bookings</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {bookings.map((b) => (
           <div
-            key={index}
-            className="flex flex-col md:flex-row justify-between bg-primary/8 border border-primary/20 rounded-lg mt-4 p-3 max-w-3xl"
+            key={b._id}
+            className="border rounded-lg p-4 shadow hover:shadow-lg transition"
           >
-            <div className="flex flex-col md:flex-row gap-4">
-              <img
-                src={item.show.movie.poster_path}
-                alt={item.show.movie.title}
-                className="max-w-[180px] aspect-video object-cover rounded"
-              />
-              <div className="flex flex-col justify-between">
-                <p className="text-lg font-semibold">{item.show.movie.title}</p>
-                <p className="text-gray-400 text-sm">
-                  {formatRuntime(item.show.movie.runtime)}
-                </p>
-                <p className="text-gray-400 text-sm mt-auto">
-                  {dateFormat(item.show.showDateTime)}
-                </p>
-              </div>
-            </div>
-
-            {/* Booking Details & Payment */}
-            <div className="flex flex-col md:items-end md:text-right justify-between p-4">
-              <div className="flex items-center gap-4">
-                <p className="text-2xl font-semibold mb-3">
-                  {currency}{item.amount}
-                </p>
-                {!item.isPaid && (
-                  <button className="bg-amber-300 px-4 py-1.5 mb-3 text-sm rounded-full font-medium cursor-pointer">
-                    Pay Now
-                  </button>
-                )}
-              </div>
-              <div className="text-sm">
-                <p>
-                  <span>Total Tickets: </span>{item.bookedSeats.length}
-                </p>
-                <p>
-                  <span>Seat Number: </span>{item.bookedSeats.join(", ")}
-                </p>
-              </div>
-            </div>
+            <h2 className="text-xl font-semibold mb-1">
+              {b.show?.movie?.title || "Movie Name Not Available"}
+            </h2>
+            <p className="mb-1">Theatre: {b.show?.theatre}</p>
+            <p className="mb-1">
+              Date & Time:{" "}
+              {b.show?.showDateTime
+                ? new Date(b.show.showDateTime).toLocaleString("en-GB", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })
+                : "N/A"}
+            </p>
+            <p className="mb-1">Seats: {b.bookedSeats.join(", ")}</p>
+            <p className="mb-1">Amount: ₹{b.amount}</p>
+            <p
+              className={`mb-2 font-semibold ${
+                b.isPaid ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              Status: {b.isPaid ? "Paid" : "Pending"}
+            </p>
+            {!b.isPaid && (
+              <button
+                onClick={() =>
+                  navigate(
+                    `/payment/${b._id}?showId=${b.show._id}&seats=${b.bookedSeats.join(",")}`
+                  )
+                }
+                className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+              >
+                Pay
+              </button>
+            )}
           </div>
         ))}
-      </ul>
+      </div>
     </div>
-  ) : (
-    <Loading />
   );
 };
 
